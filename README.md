@@ -13,6 +13,8 @@ The focus of the simulation is to provide spectra that look realistic enough for
 
 As a result, the simulator is not intended for nuclear physics education, but is sufficient to teach photopeak identification, time statistics and counting fluctuations, association of gamma ray energies with radioisotopes, and understanding activity levels through peak areas. With moderately complex samples, it is also possible to discuss the origin of radioisotopes: whether cosmogenic, primordial, or anthropogenic.
 
+<img width="1675" height="803" alt="Screenshot 2025-12-09 at 18-51-56 ☢️ Gamma Spectroscopy Sim" src="https://github.com/user-attachments/assets/5a44c0f7-5baa-44c2-a0f4-8a5b272c9a35" />
+
 ## Features and limitations
 
 - Multiple predefined samples:
