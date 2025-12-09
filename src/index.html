@@ -1,0 +1,109 @@
+<!--
+Copyright (c) 2025 Rémi Berthoz
+Source: https://github.com/remiberthoz/gamma-spectrosim
+
+This project is licensed under the MIT License. It includes the following
+third-party open-source software, also distributed under the MIT License:
+
+  - picasso.js v2.10.0
+    Author: QlikTech International AB
+    Source: https://github.com/qlik-oss/picasso.js
+
+Full license texts are available below.
+
+While the source codes of this project and the above-mentioned third-party
+dependencies are split across multiple files, they are bundled together in
+the final distribution file (gamma-spectrosim.html).
+
+
+This project - MIT License
+
+Copyright (c) 2025 Rémi Berthoz
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the “Software”), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+picasso.js - MIT License
+
+Copyright (c) 2018-present QlikTech International AB
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+-->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <title>☢️ Gamma Spectroscopy Sim</title>
+</head>
+<body id="body">
+    <div id="controls">
+        <span><label for="sample">Échantillon:</label> <select id="sample"></select></span>
+        <span><label for="detector">Détecteur:</label> <select id="detector"></select></span>
+        <span id="one-hour" class="button">Simuler une heure sans attendre.</span>
+        <span id="reset" class="button">Remettre le compteur à zéro.</span>
+        <span id="pause" class="button">Pause.</span>
+    </div>
+    <main>
+        <table id="log">
+            <tr><th>t / s</th><th>dt / s</th><th>E / keV</th></tr>
+            <tr><td>&nbsp;</td><td></td><td></td></tr>
+            <tr><td>&nbsp;</td><td></td><td></td></tr>
+            <tr><td>&nbsp;</td><td></td><td></td></tr>
+            <tr><td>&nbsp;</td><td></td><td></td></tr>
+            <tr><td>&nbsp;</td><td></td><td></td></tr>
+            <tr><td>&nbsp;</td><td></td><td></td></tr>
+            <tr><td>&nbsp;</td><td></td><td></td></tr>
+            <tr><td>&nbsp;</td><td></td><td></td></tr>
+            <tr><td>&nbsp;</td><td></td><td></td></tr>
+            <tr><td>&nbsp;</td><td></td><td></td></tr>
+            <tr><td>&nbsp;</td><td></td><td></td></tr>
+            <tr><td>&nbsp;</td><td></td><td></td></tr>
+            <tr><td>&nbsp;</td><td></td><td></td></tr>
+            <tr><td>&nbsp;</td><td></td><td></td></tr>
+            <tr><td>&nbsp;</td><td></td><td></td></tr>
+            <tr><td>&nbsp;</td><td></td><td></td></tr>
+            <tr><td>&nbsp;</td><td></td><td></td></tr>
+            <tr><td>&nbsp;</td><td></td><td></td></tr>
+            <tr><td>&nbsp;</td><td></td><td></td></tr>
+            <tr><td>&nbsp;</td><td></td><td></td></tr>
+        </table>
+        <div id="chart-area">
+            <div id="chart"></div>
+        </div>
+    </main>
+</body>
+</html>

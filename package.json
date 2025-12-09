@@ -1,0 +1,29 @@
+{
+  "name": "gamma-spectrosim",
+  "version": "1.0.0",
+  "main": "app.ts",
+  "scripts": {
+    "build": "webpack"
+  },
+  "author": "Rémi Berthoz",
+  "license": "MIT",
+  "description": "Teaching tool for photopeak identification and isotope recognition in gamma spectroscopy.",
+  "dependencies": {
+    "picasso.js": "^2.10.0"
+  },
+  "devDependencies": {
+    "css-loader": "^7.1.2",
+    "html-loader": "^5.1.0",
+    "html-webpack-plugin": "^5.6.5",
+    "mini-css-extract-plugin": "^2.9.4",
+    "css-minimizer-webpack-plugin": "^7.0.3",
+    "html-inline-css-webpack-plugin": "^1.11.2",
+    "html-inline-script-webpack-plugin": "^3.2.1",
+    "html-minimizer-webpack-plugin": "^5.0.4",
+    "license-webpack-plugin": "^4.0.2",
+    "webpack-cli": "^6.0.1",
+    "ts-loader": "^9.5.4",
+    "webpack": "^5.103.0",
+    "webpack-dev-server": "^5.2.2"
+  }
+}

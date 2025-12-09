@@ -1,0 +1,141 @@
+
+body {
+    background: #0d0f12;
+    color: #d6e1ff;
+    font-family: "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    padding: 20px;
+    font-size: 15px;
+}
+
+#controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+main {
+    background: rgba(20, 24, 33, 0.85);
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 0 25px rgba(0, 150, 255, 0.15);
+    border: 1px solid rgba(0, 150, 255, 0.15);
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap-reverse;
+}
+
+select, input {
+    background: #11141a;
+    color: #d6e1ff;
+    border: 1px solid rgba(0,150,255,0.4);
+    padding: 5px 8px;
+    border-radius: 6px;
+    outline: none;
+    transition: 0.25s ease;
+    padding: 10px 12px;
+    cursor: pointer;
+}
+
+select:hover, input:hover {
+    border-color: rgba(0,200,255,0.7);
+    box-shadow: 0 0 8px rgba(0,200,255,0.3);
+    cursor: pointer;
+}
+
+select:focus, input:focus {
+    border-color: #00aaff;
+    box-shadow: 0 0 10px rgba(0,170,255,0.6);
+    cursor: pointer;
+}
+
+.button.pause {
+    border-color: rgba(255, 0, 0, 0.5);
+}
+
+.button {
+    padding: 10px 12px;
+    background: linear-gradient(145deg, #151922, #0f1218);
+    border: 1px solid rgba(0,150,255,0.35);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.2s ease;
+    user-select: none;
+    color: #cfe4ff;
+    text-shadow: 0 0 4px rgba(0,150,255,0.5);
+}
+
+.button:hover {
+    background: rgba(0, 170, 255, 0.1);
+    border-color: rgba(0,200,255,0.6);
+    box-shadow: 0 0 12px rgba(0,200,255,0.35);
+}
+
+.button:active {
+    transform: scale(0.97);
+    box-shadow: 0 0 6px rgba(0,200,255,0.2);
+}
+
+#log {
+    border-collapse: collapse;
+    width: 300px;
+    text-align: right;
+    background: #141820;
+    overflow: hidden;
+    margin-top: 10px;
+    vertical-align: top;
+}
+
+#log th {
+    background: #1d232f;
+    padding: 6px 10px;
+    font-weight: 600;
+    color: #9fcfff;
+    border-bottom: 1px solid rgba(0,150,255,0.25);
+}
+
+#log td {
+    padding: 6px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+#log tr:nth-child(even) td {
+    background: rgba(255,255,255,0.03);
+}
+
+#chart {
+    width: 1035px;
+    height:500px;
+    position: relative;
+}
+
+#chart-area {
+    width: fit-content;
+    height: fit-content;
+    margin: auto;
+    background: rgba(10,12,16,0.7);
+    border: 1px solid rgba(0,150,255,0.2);
+    border-radius: 12px;
+    box-shadow: 0 0 25px rgba(0,150,255,0.1);
+    padding: 20px;
+    vertical-align: top;
+}
+
+/* === SCROLLBARS (futuristic neon) === */
+::-webkit-scrollbar {
+    width: 10px;
+}
+::-webkit-scrollbar-thumb {
+    background: rgba(0,150,255,0.5);
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(0,200,255,0.8);
+}
+
+/* === Smooth transitions everywhere === */
+* {
+    transition: background 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s;
+}
+
