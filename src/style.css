@@ -111,6 +111,7 @@ select:focus, input:focus {
 }
 
 #chart-area {
+    cursor: none;
     width: fit-content;
     height: fit-content;
     margin: auto;
