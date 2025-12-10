@@ -71,8 +71,13 @@ class GuiChart implements Gui {
     private SVG_RANGE_VIZ_ID: string;
     private drawStartTime: number;
 
+    private searchWidth: number;
     private SVG_CURSOR_VIZ: SVGElement;
     private SVG_CURSOR_VIZ_ID: string;
+    private SVG_PEAK_VIZ: SVGElement;
+    private SVG_PEAK_VIZ_ID: string;
+    private SVG_PEAK_ENERGY_VIZ: SVGElement;
+    private SVG_PEAK_ENERGY_VIZ_ID: string;
 
     private lastRoundedTime: number;
 
@@ -99,6 +104,7 @@ class GuiChart implements Gui {
                     mousedown: (e: MouseEvent) => this.mouseDown(e),
                     mousemove: (e: MouseEvent) => this.mouseMove(e),
                     mouseup: (e: MouseEvent) => this.mouseUp(e),
+                    wheel: (e: WheelEvent) => this.mouseWheel(e),
                 }}]
             },
         });
@@ -125,6 +131,20 @@ class GuiChart implements Gui {
         this.SVG_CURSOR_VIZ.setAttributeNS(null, 'r', '2');
         this.SVG_CURSOR_VIZ.setAttributeNS(null, 'style', 'fill: white; stroke: none;');
         this.SVG.appendChild(this.SVG_CURSOR_VIZ);
+
+        this.searchWidth = 200;
+
+        this.SVG_PEAK_VIZ_ID = "peakIndicator";
+        this.SVG_PEAK_VIZ = document.createElementNS("http://www.w3.org/2000/svg", 'line');
+        this.SVG_PEAK_VIZ.id = this.SVG_PEAK_VIZ_ID;
+        this.SVG_PEAK_VIZ.setAttributeNS(null, 'style', 'fill: none; stroke: white;');
+        this.SVG.appendChild(this.SVG_PEAK_VIZ);
+
+        this.SVG_PEAK_ENERGY_VIZ_ID = "peakTextIndicator";
+        this.SVG_PEAK_ENERGY_VIZ = document.createElementNS("http://www.w3.org/2000/svg", 'text');
+        this.SVG_PEAK_ENERGY_VIZ.id = this.SVG_PEAK_ENERGY_VIZ_ID;
+        this.SVG_PEAK_ENERGY_VIZ.setAttributeNS(null, 'fill', '#9fcfff');
+        this.SVG.appendChild(this.SVG_PEAK_ENERGY_VIZ);
     }
 
     resetData() {
@@ -197,6 +217,14 @@ class GuiChart implements Gui {
         return dataCoordinates;
     }
 
+    logspectrumCoordinatesToSVGCoordinated(logspectrumCoordinates: { energy: number, counts: number }): { x: number, y: number } {
+        const svgCoordinates = {
+            x: (logspectrumCoordinates.energy - MIN_E) * this.SVG_BBOX.width / (MAX_E - MIN_E),
+            y: this.SVG_BBOX.height - (logspectrumCoordinates.counts - MIN_Y) * this.SVG_BBOX.height / (MAX_Y - MIN_Y),
+        }
+        return svgCoordinates;
+    }
+
     mouseDown(e: MouseEvent) {
         this.drawStartTime = (new Date()).getTime();
         const pt = this.mouseEventToSVGCoordinates(e);
@@ -210,20 +238,35 @@ class GuiChart implements Gui {
             return;
         this.lastMouseMoveTime = now;
 
-        const svgCoordinates = this.mouseEventToSVGCoordinates(e);
-        const dataCoordinates = this.SVGCoordinatesToDataCoordinates({ x: svgCoordinates.x, y: svgCoordinates.y });
+        const cursorSvgCoordinates = this.mouseEventToSVGCoordinates(e);
+        const cursorDataCoordinates = this.SVGCoordinatesToDataCoordinates({ x: cursorSvgCoordinates.x, y: cursorSvgCoordinates.y });
 
-        this.SVG_CURSOR_VIZ.setAttributeNS(null, 'cx', svgCoordinates.x.toString());
-        this.SVG_CURSOR_VIZ.setAttributeNS(null, 'cy', svgCoordinates.y.toString());
+        this.SVG_CURSOR_VIZ.setAttributeNS(null, 'cx', cursorSvgCoordinates.x.toString());
+        this.SVG_CURSOR_VIZ.setAttributeNS(null, 'cy', cursorSvgCoordinates.y.toString());
 
-        COMPONENTS.find(c => c.key == POINTER_KEY).text = `x=${dataCoordinates.x.toFixed(2)}, y=${dataCoordinates.y.toFixed(0)}`;
+        const cursorEnergyDistances = ENERGIES.map((e) => Math.abs(e - cursorDataCoordinates.x));
+        const cursorEnergyIndex = cursorEnergyDistances.findIndex(e => e == Math.min(...cursorEnergyDistances));
+        const localSpectrum = this.spectrumLog.slice(Math.max(0, cursorEnergyIndex-this.searchWidth/2), Math.min(ENERGIES.length, cursorEnergyIndex+this.searchWidth/2));
+        const maxDataCoordinates = localSpectrum.sort((a, b) => b.counts - a.counts)[0];
+        const maxSvgCoordinates = this.logspectrumCoordinatesToSVGCoordinated(maxDataCoordinates);
+
+        this.SVG_PEAK_VIZ.setAttributeNS(null, 'x1', maxSvgCoordinates.x.toString());
+        this.SVG_PEAK_VIZ.setAttributeNS(null, 'y1', maxSvgCoordinates.y.toString());
+        this.SVG_PEAK_VIZ.setAttributeNS(null, 'x2', cursorSvgCoordinates.x.toString());
+        this.SVG_PEAK_VIZ.setAttributeNS(null, 'y2', cursorSvgCoordinates.y.toString());
+
+        this.SVG_PEAK_ENERGY_VIZ.setAttributeNS(null, 'x', cursorSvgCoordinates.x.toString());
+        this.SVG_PEAK_ENERGY_VIZ.setAttributeNS(null, 'y', cursorSvgCoordinates.y.toString() + 10);
+        this.SVG_PEAK_ENERGY_VIZ.textContent = maxDataCoordinates.energy.toFixed(0) + ' keV';
+
+        COMPONENTS.find(c => c.key == POINTER_KEY).text = `x=${cursorDataCoordinates.x.toFixed(2)}, y=${cursorDataCoordinates.y.toFixed(0)}`;
         this.updateTexts();
 
         if (this.drawStartTime < 0)
             return;
 
-        this.SVG_RANGE_END.x = svgCoordinates.x;
-        this.SVG_RANGE_END.y = svgCoordinates.y;
+        this.SVG_RANGE_END.x = cursorSvgCoordinates.x;
+        this.SVG_RANGE_END.y = cursorSvgCoordinates.y;
         [this.SVG_RANGE.x0, this.SVG_RANGE.x1] = [Math.min(this.SVG_RANGE_START.x, this.SVG_RANGE_END.x), Math.max(this.SVG_RANGE_START.x, this.SVG_RANGE_END.x)];
         [this.SVG_RANGE.y0, this.SVG_RANGE.y1] = [Math.min(this.SVG_RANGE_START.y, this.SVG_RANGE_END.y), Math.max(this.SVG_RANGE_START.y, this.SVG_RANGE_END.y)];
         this.SVG_RANGE_VIZ.setAttributeNS(null, 'x', this.SVG_RANGE.x0.toString());
@@ -249,6 +292,12 @@ class GuiChart implements Gui {
         this.DATA_RANGE.e1 = Math.max(data0.x, data1.x);
         this.DATA_RANGE.c1 = Math.floor(Math.max(data0.y, data1.y));
         this.updateTexts();
+    }
+
+    mouseWheel(e: WheelEvent) {
+        this.searchWidth += e.deltaY > 0 ? -10 : 10;
+        this.searchWidth = Math.max(1, Math.min(this.searchWidth, 500));
+        e.preventDefault();
     }
 }
 
