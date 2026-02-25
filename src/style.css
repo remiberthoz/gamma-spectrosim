@@ -140,3 +140,14 @@ select:focus, input:focus {
     transition: background 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s;
 }
 
+footer {
+    text-align: center;
+    p {
+        margin: 0;
+        color: lightgray;
+        font-size: smaller;
+        a {
+            color: aqua;
+        }
+    }
+}
