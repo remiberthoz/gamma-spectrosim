@@ -7,6 +7,147 @@ const MAX_Y = Math.log10(20000);
 const MIN_E = 0;
 const MAX_E = ENERGIES[ENERGIES.length-1];
 
+const X_LABEL = 'Energy / keV';
+const Y_LABEL = 'Counts';
+
+const X_AXIS_KEY = 'x-axis';
+const X_LABEL_KEY = 'x-label';
+const Y_AXIS_KEY = 'y-axis';
+const Y_LABEL_KEY = 'y-label';
+const TIMER_KEY = 'timer';
+const POINTER_KEY = 'pointer';
+const GRID_KEY = 'grid';
+const SPECTRUM_KEY = 'spectrum-line';
+
+const FONT = 'Segoe UI, Roboto, sans-serif';
+
+
+const YTICKS = Array(10).fill(0).flatMap(
+    (_, exponent) => {
+        return Array(10).fill(0).flatMap(
+            (_, idx) => {
+                const i = idx+1;
+                return { value: Math.log10(i*Math.pow(10, exponent)), isMinor: i != 1 }
+            }
+        )
+    }
+);
+
+const ENERGY_SCALE = 'energy';
+const COUNTS_SCALE = 'counts';
+
+const SCALES = {
+    energy: {
+        data: { field: ENERGY_SCALE },
+        min: ENERGIES[0],
+        max: ENERGIES[ENERGIES.length-1],
+        ticks: { distance: 100 },
+        minorTicks: { count: 3 },
+    },
+    counts: {
+        invert: true,
+        data: { field: COUNTS_SCALE },
+        min: MIN_Y,
+        max: MAX_Y,
+        ticks: { tight: false, values: YTICKS, },
+    },
+}
+
+const COMPONENTS: picasso.ComponentTypes[] = [
+    {
+        type: 'axis' as const,
+        key: X_AXIS_KEY,
+        scale: ENERGY_SCALE,
+        layout: { dock: 'bottom', },
+        settings: { labels: { fill: '#d6e1ff' }, line: {}, minorTicks: {}, ticks: {}},
+    } as picasso.ComponentAxis,
+    {
+        type: 'text' as const,
+        key: X_LABEL_KEY,
+        text: X_LABEL,
+        dock: 'bottom',
+        fontSize: 14,
+        font: FONT,
+        x: { value: '50%' },  // Centered horizontally
+        y: { value: '95%' },  // Position below the x-axis
+        align: 'middle',
+        style: { text: { fill: '#d6e1ff' }},
+        settings: {},
+    } as picasso.ComponentText,
+    {
+        type: 'axis' as const,
+        key: Y_AXIS_KEY,
+        scale: COUNTS_SCALE,
+        layout: { dock: 'left', },
+        formatter: 'logScaleFormatter',
+        settings: { labels: { fill: '#d6e1ff' }, line: {}, minorTicks: {}, ticks: {}},
+    } as picasso.ComponentAxis,
+    {
+        type: 'text' as const,
+        key: Y_LABEL_KEY,
+        text: Y_LABEL,
+        dock: 'left',
+        fontSize: 14,
+        font: FONT,
+        x: { value: '5%' },   // Position near the left side
+        y: { value: '50%' },  // Centered vertically
+        align: 'middle',
+        rotate: 270,  // Rotate for vertical alignment
+        style: { text: { fill: '#d6e1ff' }},
+        settings: {},
+    } as picasso.ComponentText,
+    {
+        type: 'text' as const,
+        key: TIMER_KEY,
+        dock: 'top',
+        text: '',
+        style: { text: { fill: '#d6e1ff' }},
+        settings: {},
+    } as picasso.ComponentText,
+    {
+        type: 'text' as const,
+        key: POINTER_KEY,
+        dock: 'top',
+        text: 'x=100 keV, y=1000',
+        style: { text: { fill: '#d6e1ff' }},
+        settings: {},
+    } as picasso.ComponentText,
+    {
+        type: 'grid-line',
+        key: GRID_KEY,
+        x: { scale: ENERGY_SCALE },
+        y: { scale: COUNTS_SCALE },
+        ticks: { show: true, stroke: '#fff5' },
+        minorTicks: { show: true, stroke: '#fff2'  },
+        settings: {
+            x: { scale: ENERGY_SCALE },
+            y: { scale: COUNTS_SCALE },
+        }
+    } as picasso.ComponentGridLine,
+    {
+        type: 'line' as const,
+        key: SPECTRUM_KEY,
+        data: {
+            extract: {
+                field: ENERGY_SCALE,
+                props: { v: { field: COUNTS_SCALE }, },
+                source: '',
+            }
+        },
+        settings: {
+            coordinates: {
+                major: { scale: ENERGY_SCALE },
+                minor: { scale: COUNTS_SCALE, ref: 'v' }
+            },
+            layers: {
+                curve: 'monotone',
+                line: { show: true, stroke: '#ccc' },
+                area: { show: false },
+            },
+        },
+    } as unknown as picasso.ComponentTypes
+]
+
 function timeConversion(duration: number) {
   let portions: string[] = ["", "", ""];
 
@@ -77,7 +218,7 @@ class GuiChart implements Gui {
     private SVG_PEAK_ENERGY_VIZ: SVGElement;
     private SVG_PEAK_ENERGY_VIZ_ID: string;
 
-    private lastRoundedTime: number;
+    private lastRoundedTime: number = 0;
 
     constructor(chartElement: HTMLElement) {
         this.CHART = chartElement;
@@ -87,7 +228,8 @@ class GuiChart implements Gui {
 
         picasso.formatter('logScaleFormatter', logScaleFormatter);
 
-        COMPONENTS.find(c => c.key == TIMER_KEY).text = `Timer: 0 s | Counts: ${pad(0, 10)} | CPS: ${(0).toFixed(3)}`;
+        const timer = COMPONENTS.find(c => c.key == TIMER_KEY) as picasso.ComponentText;
+        timer.text = `Timer: 0 s | Counts: ${pad(0, 10)} | CPS: ${(0).toFixed(3)}`;
 
         this.PICASSO_CHART = picasso.chart({
             element: this.CHART,
@@ -101,7 +243,13 @@ class GuiChart implements Gui {
                     mousemove: (e: MouseEvent) => this.mouseMove(e),
                     mouseup: (e: MouseEvent) => this.mouseUp(e),
                     wheel: (e: WheelEvent) => this.mouseWheel(e),
-                }}]
+                }}],
+                formatters: {
+                    logScaleFormatter: {
+                        type: 'logScaleFormatter',
+                        format: '',
+                    }
+                }
             },
         });
 
@@ -161,7 +309,8 @@ class GuiChart implements Gui {
     updateTexts() {
         const roundedTime = this.lastRoundedTime;
         const cps = roundedTime > 0 ? this.countsInRange()/roundedTime : 0;
-        COMPONENTS.find(c => c.key == TIMER_KEY).text = `Timer: ${timeConversion(roundedTime)} | Counts: ${pad(this.countsInRange(), 10)} | CPS: ${cps.toFixed(3)}`;
+        const timer = COMPONENTS.find(c => c.key == TIMER_KEY)! as picasso.ComponentText;
+        timer.text = `Timer: ${timeConversion(roundedTime)} | Counts: ${pad(this.countsInRange(), 10)} | CPS: ${cps.toFixed(3)}`;
         this.PICASSO_CHART.update({
             excludeFromUpdate: COMPONENTS.map(c => c.key).filter(k => !(k == TIMER_KEY || k == POINTER_KEY)),
         })
@@ -170,7 +319,8 @@ class GuiChart implements Gui {
     updateDisplay(roundedTime: number) {
         this.lastRoundedTime = roundedTime;
         const cps = roundedTime > 0 ? this.countsInRange()/roundedTime : 0;
-        COMPONENTS.find(c => c.key == TIMER_KEY).text = `Timer: ${timeConversion(roundedTime)} | Counts: ${pad(this.countsInRange(), 10)} | CPS: ${cps.toFixed(3)}`;
+        const timer = COMPONENTS.find(c => c.key == TIMER_KEY)! as picasso.ComponentText;
+        timer.text = `Timer: ${timeConversion(roundedTime)} | Counts: ${pad(this.countsInRange(), 10)} | CPS: ${cps.toFixed(3)}`;
         this.PICASSO_CHART.update({
             data: { data: this.spectrumLog },
             partialData: true,
@@ -200,7 +350,7 @@ class GuiChart implements Gui {
     mouseEventToSVGCoordinates(e: any): DOMPoint {
         this.SVG_POINT.x = e.clientX;
         this.SVG_POINT.y = e.clientY;
-        const svgCoordinates = this.SVG_POINT.matrixTransform(this.SVG.getScreenCTM().inverse());
+        const svgCoordinates = this.SVG_POINT.matrixTransform(this.SVG.getScreenCTM()!.inverse());
         return svgCoordinates;
     }
 
@@ -255,7 +405,8 @@ class GuiChart implements Gui {
         this.SVG_PEAK_ENERGY_VIZ.setAttributeNS(null, 'y', cursorSvgCoordinates.y.toString() + 10);
         this.SVG_PEAK_ENERGY_VIZ.textContent = maxDataCoordinates.energy.toFixed(0) + ' keV';
 
-        COMPONENTS.find(c => c.key == POINTER_KEY).text = `x=${cursorDataCoordinates.x.toFixed(2)}, y=${cursorDataCoordinates.y.toFixed(0)}`;
+        const pointer = COMPONENTS.find(c => c.key == POINTER_KEY)! as picasso.ComponentText;
+        pointer.text = `x=${cursorDataCoordinates.x.toFixed(2)}, y=${cursorDataCoordinates.y.toFixed(0)}`;
         this.updateTexts();
 
         if (this.drawStartTime < 0)
@@ -296,130 +447,5 @@ class GuiChart implements Gui {
         e.preventDefault();
     }
 }
-
-
-const YTICKS = Array(10).fill(0).flatMap(
-    (_, exponent) => {
-        return Array(10).fill(0).flatMap(
-            (_, idx) => {
-                const i = idx+1;
-                return { value: Math.log10(i*Math.pow(10, exponent)), isMinor: i != 1 }
-            }
-        )
-    }
-);
-
-const ENERGY_SCALE = 'energy';
-const COUNTS_SCALE = 'counts';
-
-const SCALES = {
-    energy: {
-        data: { field: ENERGY_SCALE },
-        min: ENERGIES[0],
-        max: ENERGIES[ENERGIES.length-1],
-        ticks: { distance: 100 },
-        minorTicks: { count: 3 },
-    },
-    counts: {
-        invert: true,
-        data: { field: COUNTS_SCALE },
-        min: MIN_Y,
-        max: MAX_Y,
-        ticks: { tight: false, values: YTICKS, },
-    },
-}
-
-const X_LABEL = 'Energy / keV';
-const Y_LABEL = 'Counts';
-
-const X_AXIS_KEY = 'x-axis';
-const X_LABEL_KEY = 'x-label';
-const Y_AXIS_KEY = 'y-axis';
-const Y_LABEL_KEY = 'y-label';
-const TIMER_KEY = 'timer';
-const POINTER_KEY = 'pointer';
-const GRID_KEY = 'grid';
-const SPECTRUM_KEY = 'spectrum-line';
-
-const FONT = 'Segoe UI, Roboto, sans-serif';
-
-const COMPONENTS = [
-    {
-        type: 'axis',
-        key: X_AXIS_KEY,
-        scale: ENERGY_SCALE,
-        layout: { dock: 'bottom', },
-        settings: { labels: { fill: '#d6e1ff' }},
-    }, {
-        type: 'text',
-        key: X_LABEL_KEY,
-        text: X_LABEL,
-        dock: 'bottom',
-        fontSize: 14,
-        font: FONT,
-        x: { value: '50%' },  // Centered horizontally
-        y: { value: '95%' },  // Position below the x-axis
-        align: 'middle',
-        style: { text: { fill: '#d6e1ff' }},
-    }, {
-        type: 'axis',
-        key: Y_AXIS_KEY,
-        scale: COUNTS_SCALE,
-        layout: { dock: 'left', },
-        formatter: { type: 'logScaleFormatter', format: '', },
-        settings: { labels: { fill: '#d6e1ff' }},
-    }, {
-        type: 'text',
-        key: Y_LABEL_KEY,
-        text: Y_LABEL,
-        dock: 'left',
-        fontSize: 14,
-        font: FONT,
-        x: { value: '5%' },   // Position near the left side
-        y: { value: '50%' },  // Centered vertically
-        align: 'middle',
-        rotate: 270,  // Rotate for vertical alignment
-        style: { text: { fill: '#d6e1ff' }},
-    }, {
-        type: 'text',
-        key: TIMER_KEY,
-        dock: 'top',
-        text: '',
-        style: { text: { fill: '#d6e1ff' }},
-    }, {
-        type: 'text',
-        key: POINTER_KEY,
-        dock: 'top',
-        text: 'x=100 keV, y=1000',
-        style: { text: { fill: '#d6e1ff' }},
-    }, {
-        type: 'grid-line',
-        key: GRID_KEY,
-        x: { scale: ENERGY_SCALE },
-        y: { scale: COUNTS_SCALE },
-        ticks: { show: true, stroke: '#fff5' },
-        minorTicks: { show: true, stroke: '#fff2'  },
-    }, {
-        type: 'line',
-        key: SPECTRUM_KEY,
-        data: {
-            extract: {
-                field: ENERGY_SCALE,
-                props: { v: { field: COUNTS_SCALE }, },
-            }
-        },
-        settings: {
-            coordinates: {
-                major: { scale: ENERGY_SCALE },
-                minor: { scale: COUNTS_SCALE, ref: 'v' }
-            },
-            layers: {
-                curve: 'monotone',
-                line: { show: true, stroke: '#ccc' },
-                area: { show: false },
-            },
-        },
-    }
-]
 
 export { GuiChart };
