@@ -1,5 +1,3 @@
-import './style';
-
 import { ENERGIES, SAMPLES } from './samples';
 import { SENSORS } from './sensors';
 

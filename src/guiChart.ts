@@ -1,8 +1,6 @@
 import { Gui } from './gui';
 import { ENERGIES, SpectrumPoint } from './samples';
-
-const picasso: any = require('picasso.js').default();
-let Picasso: any;
+import picasso from "picasso.js";
 
 const MIN_Y = -Math.log10(2);
 const MAX_Y = Math.log10(20000);
@@ -87,13 +85,11 @@ class GuiChart implements Gui {
         this.totalCounts = 0;
         this.lastMouseMoveTime = 0;
 
-        if (Picasso == undefined)
-            Picasso = new picasso();
         picasso.formatter('logScaleFormatter', logScaleFormatter);
 
         COMPONENTS.find(c => c.key == TIMER_KEY).text = `Timer: 0 s | Counts: ${pad(0, 10)} | CPS: ${(0).toFixed(3)}`;
 
-        this.PICASSO_CHART = Picasso.chart({
+        this.PICASSO_CHART = picasso.chart({
             element: this.CHART,
             settings: {
                 data: { data: this.spectrumLog },
