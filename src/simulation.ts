@@ -40,10 +40,10 @@ class Simulation {
     private _displayedTime: number;
     private lastDecayTime: number;
     private totalCounts: number;
-    private measuredSpectrum: SpectrumPoint[];
-    private measuredSpectrumLog: SpectrumPoint[];
     private sampleSpectrum: SpectrumPoint[];
     private sampleSpectrumAcc: SpectrumPoint[];
+    private backgroundSpectrum: SpectrumPoint[];
+    private backgroundSpectrumAcc: SpectrumPoint[];
     private _hash: number;
 
     constructor() {
@@ -51,10 +51,12 @@ class Simulation {
         this._displayedTime = 0;
         this.lastDecayTime = 0;
         this.totalCounts = 0;
-        this.measuredSpectrum = ENERGIES.map(e => { return { energy: e, counts: 0 } });
-        this.measuredSpectrumLog = ENERGIES.map(e => { return { energy: e, counts: -Infinity } });  // stored to avoid the need of recomputing the log of the whole spectrum when displaying the chart
+        // Fixed "ideal" sample spectrum
         this.sampleSpectrum = ENERGIES.map(e => { return { energy: e, counts: 0 } });  // only the accumulated spectrum is usefull, this is stored in case we want to display it later
         this.sampleSpectrumAcc = ENERGIES.map(e => { return { energy: e, counts: 0 } });
+        // Fixed "ideal" background spectrum
+        this.backgroundSpectrum = ENERGIES.map(e => { return { energy: e, counts: 0 } });  // only the accumulated spectrum is usefull, this is stored in case we want to display it later
+        this.backgroundSpectrumAcc = ENERGIES.map(e => { return { energy: e, counts: 0 } });
         this._hash = Math.random();
     }
 
@@ -81,6 +83,7 @@ class Simulation {
         for (let e = 0; e < ENERGIES.length; e++) {
             const background_height = BACKGROUND[e].counts;
             this.sampleSpectrum[e].counts = background_height;
+            this.backgroundSpectrum[e].counts = background_height;
         }
         // ...and add sample isotope peaks...
         for (let isotope of selectedSample.isotopes) {
@@ -100,20 +103,10 @@ class Simulation {
         }
         // ...then compute accumulated spectrum
         this.sampleSpectrumAcc[0].counts = this.sampleSpectrum[0].counts;
+        this.backgroundSpectrumAcc[0].counts = this.backgroundSpectrum[0].counts;
         for (let i = 1; i < ENERGIES.length; i++) {
             this.sampleSpectrumAcc[i].counts = this.sampleSpectrumAcc[i-1].counts + this.sampleSpectrum[i].counts;
-        }
-    }
-
-    performDecay(energyIndex: number, energy: number, timestamp: number, instantLog: boolean) {
-        this.measuredSpectrum[energyIndex].counts += 1;
-        this.measuredSpectrumLog[energyIndex].counts = Math.log10(this.measuredSpectrum[energyIndex].counts);
-        this.totalCounts += 1;
-        if (instantLog) {
-            if (this._isPaused) return;
-            const delay = timestamp - this.lastDecayTime;
-            // below needs max() because the decays do not happen in order when not performed via timeout
-            this.lastDecayTime = Math.max(this.lastDecayTime, timestamp);
+            this.backgroundSpectrumAcc[i].counts = this.backgroundSpectrumAcc[i-1].counts + this.backgroundSpectrum[i].counts;
         }
     }
 
@@ -132,11 +125,22 @@ class Simulation {
         callback2();
     }
 
-    reset() {
-        for (let e = 0; e < ENERGIES.length; e++) {
-            this.measuredSpectrum[e].counts = 0;
-            this.measuredSpectrumLog[e].counts = -Infinity;
+    advanceTimeBackground(duration: number, withTimeouts: boolean, callback: (timestamp: number, delay: number, energy: number, energyIndex: number) => void, callback2: () => void) {
+        const sampleCps = this.backgroundSpectrumAcc[ENERGIES.length - 1].counts;
+        const numberOfDecays = drawFromPoisson(sampleCps * duration);
+        for (let i = 0; i < numberOfDecays; i++) {
+            const decayDelay = Math.random() * duration;
+            const [decayEnergyIndex, decayEnergy] = drawByInverseTransform(this.backgroundSpectrumAcc);
+            if (withTimeouts)
+                setTimeout(callback, decayDelay * 1000, this._displayedTime + decayDelay, decayDelay, decayEnergy, decayEnergyIndex);
+            else
+                callback(this._displayedTime + decayDelay, decayDelay, decayEnergy, decayEnergyIndex);
         }
+        this._displayedTime += duration;
+        callback2();
+    }
+
+    reset() {
         this._displayedTime = 0;
         this.totalCounts = 0;
         this._hash = Math.random();

@@ -259,6 +259,31 @@ main {
     font-weight: bold;
 }
 
+#legend {
+    background: var(--white);
+    border: 1px solid var(--panel-dark);
+    padding: 6px 8px;
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11px;
+    color: var(--ink-dim);
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.legend-swatch {
+    display: inline-block;
+    width: 12px;
+    height: 3px;
+    border-radius: 1px;
+}
+
 #chart-area {
     flex: 1;
     width: fit-content;

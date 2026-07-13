@@ -80,6 +80,12 @@ window.onload = () => {
             chart.updateDisplay(simulation.displayedTime)
             table.updateDisplay(simulation.displayedTime);
         });
+        simulation.advanceTimeBackground(3600, false, (timestamp: number, delay: number, energy: number, energyIndex: number) => {
+            chart.logDecayBackground(timestamp, delay, energy, energyIndex);
+            // table.resetData();
+        }, () => {
+            chart.updateDisplay(simulation.displayedTime);
+        });
     }
 
     RESET_BUTTON.onclick = () => {
@@ -128,6 +134,18 @@ window.onload = () => {
             table.logDecay(timestamp, delay, energy, energyIndex);
             chart.updateDisplay(simulation.displayedTime);
             table.updateDisplay(simulation.displayedTime);
+        }, () => {});
+    }, 1000);
+
+    setInterval(() => {
+        if (simulation.isPaused)
+            return;
+        const hash = simulation.hash;
+        simulation.advanceTimeBackground(1, true, (timestamp: number, delay: number, energy: number, energyIndex: number) => {
+            if (simulation.isPaused || simulation.hash != hash)
+                return;
+            chart.logDecayBackground(timestamp, delay, energy, energyIndex);
+            chart.updateDisplay(simulation.displayedTime);
         }, () => {});
     }, 1000);
 

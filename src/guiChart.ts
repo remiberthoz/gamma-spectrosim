@@ -1,5 +1,5 @@
 import { Gui } from './gui';
-import { ENERGIES, SpectrumPoint } from './samples';
+import { ENERGIES, BACKGROUND, SpectrumPoint } from './samples';
 import picasso from "picasso.js";
 
 const MIN_Y = -Math.log10(2);
@@ -16,6 +16,7 @@ const Y_AXIS_KEY = 'y-axis';
 const Y_LABEL_KEY = 'y-label';
 const GRID_KEY = 'grid';
 const SPECTRUM_KEY = 'spectrum-line';
+const BACKGROUND_KEY = 'background-line';
 
 const FONT = 'Tahoma, Segoe UI, Verdana, sans-serif';
 
@@ -113,7 +114,7 @@ const COMPONENTS: picasso.ComponentTypes[] = [
             extract: {
                 field: ENERGY_SCALE,
                 props: { v: { field: COUNTS_SCALE }, },
-                source: '',
+                source: 'measured',
             }
         },
         settings: {
@@ -123,11 +124,33 @@ const COMPONENTS: picasso.ComponentTypes[] = [
             },
             layers: {
                 curve: 'monotone',
-                line: { show: true, stroke: '#2f6b4c', strokeWidth: 1.4 },
+                line: { show: true, stroke: '#1a5fb4', strokeWidth: 1.4 },
                 area: { show: false },
             },
         },
-    } as unknown as picasso.ComponentTypes
+    } as unknown as picasso.ComponentTypes,
+    {
+        type: 'line',
+        key: BACKGROUND_KEY,
+        data: {
+            extract: {
+                source: 'background',
+                field: ENERGY_SCALE,
+                props: { v: { field: COUNTS_SCALE }, },
+            }
+        },
+        settings: {
+            coordinates: {
+                major: { scale: ENERGY_SCALE },
+                minor: { scale: COUNTS_SCALE, ref: 'v' }
+            },
+            layers: {
+                curve: 'monotone',
+                line: { show: true, stroke: '#e08214', strokeWidth: 4 },
+                area: { show: false },
+            },
+        },
+    } as unknown as picasso.ComponentTypes,
 ]
 
 function timeConversion(duration: number) {
@@ -174,6 +197,7 @@ function logScaleFormatter() {
 class GuiChart implements Gui {
 
     private spectrumLog: SpectrumPoint[];
+    private backgroundLog: SpectrumPoint[];
     private totalCounts: number;
 
     private lastMouseMoveTime: number;
@@ -209,6 +233,7 @@ class GuiChart implements Gui {
         this.TIMER_EL = timerElement;
         this.POINTER_EL = pointerElement;
         this.spectrumLog = ENERGIES.map(e => { return { energy: e, counts: MIN_Y }});
+        this.backgroundLog = ENERGIES.map(e => { return { energy: e, counts: MIN_Y }});
         this.totalCounts = 0;
         this.lastMouseMoveTime = 0;
 
@@ -219,7 +244,10 @@ class GuiChart implements Gui {
         this.PICASSO_CHART = picasso.chart({
             element: this.CHART,
             settings: {
-                data: { data: this.spectrumLog },
+                data: [
+                    { key: 'measured', data: this.spectrumLog },
+                    { key: 'background', data: this.backgroundLog },
+                ],
                 scales: SCALES,
                 // interactions: INTERACTIONS,
                 components: COMPONENTS,
@@ -290,6 +318,7 @@ class GuiChart implements Gui {
 
     resetData() {
         this.spectrumLog = ENERGIES.map(e => { return { energy: e, counts: MIN_Y }});
+        this.backgroundLog = ENERGIES.map(e => { return { energy: e, counts: MIN_Y }});
         this.totalCounts = 0;
     }
 
@@ -303,6 +332,13 @@ class GuiChart implements Gui {
         this.totalCounts += 1;
     }
 
+    logDecayBackground(timestamp: number, delay: number, energy: number, energyIndex: number) {
+        if (this.backgroundLog[energyIndex].counts == MIN_Y)
+            this.backgroundLog[energyIndex].counts = Math.log10(1);
+        else
+            this.backgroundLog[energyIndex].counts = Math.log10(Math.pow(10, this.backgroundLog[energyIndex].counts) + 1);
+    }
+
     refreshTimerReadout() {
         const roundedTime = this.lastRoundedTime;
         const cps = roundedTime > 0 ? this.countsInRange()/roundedTime : 0;
@@ -313,9 +349,12 @@ class GuiChart implements Gui {
         this.lastRoundedTime = roundedTime;
         this.refreshTimerReadout();
         this.PICASSO_CHART.update({
-            data: { data: this.spectrumLog },
+            data: [
+                { key: 'measured', data: this.spectrumLog },
+                { key: 'background', data: this.backgroundLog },
+            ],
             partialData: true,
-            excludeFromUpdate: COMPONENTS.map(c => c.key).filter(k => k != SPECTRUM_KEY),
+            excludeFromUpdate: COMPONENTS.map(c => c.key).filter(k => k != SPECTRUM_KEY && k != BACKGROUND_KEY),
         })
     }
 
