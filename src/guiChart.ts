@@ -38,8 +38,8 @@ const COUNTS_SCALE = 'counts';
 const SCALES = {
     energy: {
         data: { field: ENERGY_SCALE },
-        min: ENERGIES[0],
-        max: ENERGIES[ENERGIES.length-1],
+        min: MIN_E,
+        max: MAX_E,
         ticks: { distance: 100 },
         minorTicks: { count: 3 },
     },
@@ -214,7 +214,7 @@ class GuiChart implements Gui {
     private SVG_RANGE_START: { x: number, y: number };
     private SVG_RANGE_END: { x: number, y: number };
     private SVG_RANGE: { x0: number, y0: number, x1: number, y1: number };
-    private DATA_RANGE: { e0: number, e1: number, c0: number, c1: number };
+    private DATA_RANGE: { start: number, end: number, show: boolean };
     private SVG_RANGE_VIZ: SVGElement;
     private SVG_RANGE_VIZ_ID: string;
     private drawStartTime: number;
@@ -274,7 +274,7 @@ class GuiChart implements Gui {
         this.SVG_RANGE_START = { x: 0, y: 0 };
         this.SVG_RANGE_END = { x: 0, y: 0 };
         this.SVG_RANGE = { x0: 0, y0: 0, x1: 0, y1: 0 };
-        this.DATA_RANGE = { e0: MIN_E, e1: MAX_E, c0: 0, c1: Math.pow(10, MAX_Y) };
+        this.DATA_RANGE = { start: MIN_E, end: MAX_E, show: false };
 
         this.SVG_RANGE_VIZ_ID = "rangeIndicator";
         this.SVG_RANGE_VIZ = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
@@ -362,19 +362,17 @@ class GuiChart implements Gui {
 
     countsInRange(): number {
         let countsInRange = 0;
-        const bottomCounts = this.DATA_RANGE.c0;
-        const topCounts = this.DATA_RANGE.c1;
+        const start = this.DATA_RANGE.start
+        const end = this.DATA_RANGE.end
         for (let e = 0; e < ENERGIES.length; e++) {
-            if (!(this.DATA_RANGE.e0 < ENERGIES[e] && ENERGIES[e] < this.DATA_RANGE.e1))
+            if (!(start < ENERGIES[e] && ENERGIES[e] < end))
                 continue;
-            const counts = Math.pow(10, this.spectrumLog[e].counts);
-            if (counts < 1) continue;
-            if (bottomCounts < counts) {
-                if (counts < topCounts)
-                    countsInRange += counts - bottomCounts;
-                else
-                    countsInRange += topCounts - bottomCounts;
-            }
+            const sample = Math.pow(10, this.spectrumLog[e].counts);
+            const background = Math.pow(10, this.backgroundLog[e].counts);
+            const counts = sample - background;
+            if (counts < 1)
+                continue;
+            countsInRange += counts;
         }
         return Math.round(countsInRange);
     }
@@ -411,54 +409,55 @@ class GuiChart implements Gui {
         return svgCoordinates;
     }
 
+    updateSelectionRange(start?: number, end?: number) {
+        if (start) {
+            this.DATA_RANGE.start = start;
+            this.DATA_RANGE.end = start;
+        }
+        if (end && this.drawStartTime > 0) {
+            this.DATA_RANGE.end = end;
+            this.DATA_RANGE.show = true;
+        }
+
+        if (!this.DATA_RANGE.show) 
+            return;
+
+        const [left, right] = [Math.min, Math.max].map(f => f(this.DATA_RANGE.start, this.DATA_RANGE.end));
+
+        const xLeft = this.dataCoordinatesToSVGCoordinates({ energy: left, counts: 0 }).x;
+        const xRight = this.dataCoordinatesToSVGCoordinates({ energy: right, counts: 0 }).x;
+
+        this.SVG_RANGE_VIZ.setAttributeNS(null, 'x', xLeft.toString());
+        this.SVG_RANGE_VIZ.setAttributeNS(null, 'width', (xRight - xLeft).toString());
+
+        this.SVG_RANGE_VIZ.setAttributeNS(null, 'y', '0');
+        this.SVG_RANGE_VIZ.setAttributeNS(null, 'height', this.SVG_BBOX.height.toString());
+
+        this.SVG.appendChild(this.SVG_RANGE_VIZ);
+
+        this.refreshTimerReadout();
+    }
+
     mouseDown(e: MouseEvent) {
+        e.preventDefault();
         this.drawStartTime = (new Date()).getTime();
-        const pt = this.mouseEventToSVGCoordinates(e);
-        this.SVG_RANGE_START.x = pt.x;
-        this.SVG_RANGE_START.y = pt.y;
+        const cursorSvgCoordinates = this.mouseEventToSVGCoordinates(e);
+        const cursorDataCoordinates = this.SVGCoordinatesToDataCoordinates(cursorSvgCoordinates);
+        this.updateSelectionRange(cursorDataCoordinates.x, undefined);
     }
 
     mouseMove(e: MouseEvent) {
+        e.preventDefault();
         const now = (new Date()).getTime();
         if (now - this.lastMouseMoveTime < 5)
             return;
         this.lastMouseMoveTime = now;
 
         const cursorSvgCoordinates = this.mouseEventToSVGCoordinates(e);
-        const cursorDataCoordinates = this.SVGCoordinatesToDataCoordinates({ x: cursorSvgCoordinates.x, y: cursorSvgCoordinates.y });
-
-        this.SVG_CURSOR_VIZ.setAttributeNS(null, 'cx', cursorSvgCoordinates.x.toString());
-        this.SVG_CURSOR_VIZ.setAttributeNS(null, 'cy', cursorSvgCoordinates.y.toString());
-
-        const cursorEnergyDistances = ENERGIES.map((e) => Math.abs(e - cursorDataCoordinates.x));
-        const cursorEnergyIndex = cursorEnergyDistances.findIndex(e => e == Math.min(...cursorEnergyDistances));
-        const localSpectrum = this.spectrumLog.slice(Math.max(0, cursorEnergyIndex-this.searchWidth/2), Math.min(ENERGIES.length, cursorEnergyIndex+this.searchWidth/2));
-        const maxDataCoordinates = localSpectrum.sort((a, b) => b.counts - a.counts)[0];
-        const maxSvgCoordinates = this.logspectrumCoordinatesToSVGCoordinated(maxDataCoordinates);
-
-        this.SVG_PEAK_VIZ.setAttributeNS(null, 'x1', maxSvgCoordinates.x.toString());
-        this.SVG_PEAK_VIZ.setAttributeNS(null, 'y1', maxSvgCoordinates.y.toString());
-        this.SVG_PEAK_VIZ.setAttributeNS(null, 'x2', cursorSvgCoordinates.x.toString());
-        this.SVG_PEAK_VIZ.setAttributeNS(null, 'y2', cursorSvgCoordinates.y.toString());
-
-        this.SVG_PEAK_ENERGY_VIZ.setAttributeNS(null, 'x', cursorSvgCoordinates.x.toString());
-        this.SVG_PEAK_ENERGY_VIZ.setAttributeNS(null, 'y', cursorSvgCoordinates.y.toString() + 10);
-        this.SVG_PEAK_ENERGY_VIZ.textContent = maxDataCoordinates.energy.toFixed(0) + ' keV';
-
+        const cursorDataCoordinates = this.SVGCoordinatesToDataCoordinates(cursorSvgCoordinates);
         this.POINTER_EL.textContent = `x=${cursorDataCoordinates.x.toFixed(2)}, y=${cursorDataCoordinates.y.toFixed(0)}`;
 
-        if (this.drawStartTime < 0)
-            return;
-
-        this.SVG_RANGE_END.x = cursorSvgCoordinates.x;
-        this.SVG_RANGE_END.y = cursorSvgCoordinates.y;
-        [this.SVG_RANGE.x0, this.SVG_RANGE.x1] = [Math.min(this.SVG_RANGE_START.x, this.SVG_RANGE_END.x), Math.max(this.SVG_RANGE_START.x, this.SVG_RANGE_END.x)];
-        [this.SVG_RANGE.y0, this.SVG_RANGE.y1] = [Math.min(this.SVG_RANGE_START.y, this.SVG_RANGE_END.y), Math.max(this.SVG_RANGE_START.y, this.SVG_RANGE_END.y)];
-        this.SVG_RANGE_VIZ.setAttributeNS(null, 'x', this.SVG_RANGE.x0.toString());
-        this.SVG_RANGE_VIZ.setAttributeNS(null, 'y', this.SVG_RANGE.y0.toString());
-        this.SVG_RANGE_VIZ.setAttributeNS(null, 'width', (this.SVG_RANGE.x1 - this.SVG_RANGE.x0).toString());
-        this.SVG_RANGE_VIZ.setAttributeNS(null, 'height', (this.SVG_RANGE.y1 - this.SVG_RANGE.y0).toString());
-        this.SVG.appendChild(this.SVG_RANGE_VIZ);
+        this.updateSelectionRange(undefined, cursorDataCoordinates.x);
     }
 
     mouseUp(e: MouseEvent) {
@@ -467,15 +466,16 @@ class GuiChart implements Gui {
         this.drawStartTime = -1;
         if (now - start < 100) {
             this.SVG.removeChild(this.SVG_RANGE_VIZ);
-            this.DATA_RANGE = { e0: MIN_E, e1: MAX_E, c0: 0, c1: Math.pow(10, MAX_Y) };
+            this.DATA_RANGE = { start: MIN_E, end: MAX_E, show: false };
             return;
         }
-        const data0 = this.SVGCoordinatesToDataCoordinates({ x: this.SVG_RANGE.x0, y: this.SVG_RANGE.y0 });
-        const data1 = this.SVGCoordinatesToDataCoordinates({ x: this.SVG_RANGE.x1, y: this.SVG_RANGE.y1 });
-        this.DATA_RANGE.e0 = Math.min(data0.x, data1.x);
-        this.DATA_RANGE.c0 = Math.floor(Math.min(data0.y, data1.y));
-        this.DATA_RANGE.e1 = Math.max(data0.x, data1.x);
-        this.DATA_RANGE.c1 = Math.floor(Math.max(data0.y, data1.y));
+        
+        [this.DATA_RANGE.start, this.DATA_RANGE.end] = [Math.min, Math.max].map(f => f(this.DATA_RANGE.start, this.DATA_RANGE.end));
+
+        const cursorSvgCoordinates = this.mouseEventToSVGCoordinates(e);
+        const cursorDataCoordinates = this.SVGCoordinatesToDataCoordinates(cursorSvgCoordinates);
+        this.updateSelectionRange(undefined, cursorDataCoordinates.x);
+
         this.refreshTimerReadout();
     }
 
@@ -502,6 +502,7 @@ class GuiChart implements Gui {
             settings: this.settings,
         });
 
+        this.updateSelectionRange();
     }
 }
 
