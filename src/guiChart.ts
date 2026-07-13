@@ -51,6 +51,7 @@ const SCALES = {
         ticks: { tight: false, values: YTICKS, },
     },
 }
+type SpectrumScales = typeof SCALES;
 
 const COMPONENTS: picasso.ComponentTypes[] = [
     {
@@ -205,7 +206,7 @@ class GuiChart implements Gui {
     private CHART: HTMLElement;
     private TIMER_EL: HTMLElement;
     private POINTER_EL: HTMLElement;
-    private PICASSO_CHART: any;
+    private PICASSO_CHART: picasso.Chart;
     private SVG: SVGSVGElement;
     private SVG_BBOX: DOMRect;
     private SVG_POINT: DOMPoint;
@@ -228,6 +229,23 @@ class GuiChart implements Gui {
 
     private lastRoundedTime: number = 0;
 
+    private settings: picasso.ChartSettings = {
+        scales: SCALES,
+        components: COMPONENTS,
+        interactions: [{ type: 'native', enable: true, events: {
+            mousedown: (e: MouseEvent) => this.mouseDown(e),
+            mousemove: (e: MouseEvent) => this.mouseMove(e),
+            mouseup: (e: MouseEvent) => this.mouseUp(e),
+            wheel: (e: WheelEvent) => this.mouseWheel(e),
+        }}],
+        formatters: {
+            logScaleFormatter: {
+                type: 'logScaleFormatter',
+                format: '',
+            }
+        }
+    }
+
     constructor(chartElement: HTMLElement, timerElement: HTMLElement, pointerElement: HTMLElement) {
         this.CHART = chartElement;
         this.TIMER_EL = timerElement;
@@ -242,28 +260,12 @@ class GuiChart implements Gui {
         this.TIMER_EL.textContent = `Timer: 0 s | Counts: ${pad(0, 10)} | CPS: ${(0).toFixed(3)}`;
 
         this.PICASSO_CHART = picasso.chart({
+            data: [
+                { key: 'measured', data: this.spectrumLog, type: '' },
+                { key: 'background', data: this.backgroundLog, type: '' },
+            ],
             element: this.CHART,
-            settings: {
-                data: [
-                    { key: 'measured', data: this.spectrumLog },
-                    { key: 'background', data: this.backgroundLog },
-                ],
-                scales: SCALES,
-                // interactions: INTERACTIONS,
-                components: COMPONENTS,
-                interactions: [{ type: 'native', events: {
-                    mousedown: (e: MouseEvent) => this.mouseDown(e),
-                    mousemove: (e: MouseEvent) => this.mouseMove(e),
-                    mouseup: (e: MouseEvent) => this.mouseUp(e),
-                    wheel: (e: WheelEvent) => this.mouseWheel(e),
-                }}],
-                formatters: {
-                    logScaleFormatter: {
-                        type: 'logScaleFormatter',
-                        format: '',
-                    }
-                }
-            },
+            settings: this.settings,
         });
 
         this.SVG = <SVGSVGElement> this.CHART.childNodes[COMPONENTS.findIndex(c => c.key == SPECTRUM_KEY)];
@@ -386,16 +388,24 @@ class GuiChart implements Gui {
 
     SVGCoordinatesToDataCoordinates(svgCoordinates: { x: number, y: number }): { x: number, y: number } {
         const dataCoordinates = {
-            x: svgCoordinates.x / this.SVG_BBOX.width * (MAX_E - MIN_E) + MIN_E,
+            x: svgCoordinates.x / this.SVG_BBOX.width * (this.settings.scales.energy.max - this.settings.scales.energy.min) + this.settings.scales.energy.min,
             y: (this.SVG_BBOX.height - svgCoordinates.y) / this.SVG_BBOX.height * (MAX_Y - MIN_Y) + MIN_Y
         }
         dataCoordinates.y = dataCoordinates.y > 0 ? Math.pow(10, dataCoordinates.y) : 0;
         return dataCoordinates;
     }
 
-    logspectrumCoordinatesToSVGCoordinated(logspectrumCoordinates: { energy: number, counts: number }): { x: number, y: number } {
+    dataCoordinatesToSVGCoordinates(data: { energy: number, counts: number }): { x: number, y: number } {
         const svgCoordinates = {
-            x: (logspectrumCoordinates.energy - MIN_E) * this.SVG_BBOX.width / (MAX_E - MIN_E),
+            x: (data.energy - this.settings.scales.energy.min) * this.SVG_BBOX.width / (this.settings.scales.energy.max - this.settings.scales.energy.min),
+            y: this.SVG_BBOX.height - (Math.log10(data.counts) - MIN_Y) * this.SVG_BBOX.height / (MAX_Y - MIN_Y),
+        }
+        return svgCoordinates;
+    }
+
+    logspectrumCoordinatesToSVGCoordinates(logspectrumCoordinates: { energy: number, counts: number }): { x: number, y: number } {
+        const svgCoordinates = {
+            x: (logspectrumCoordinates.energy - this.settings.scales.energy.min) * this.SVG_BBOX.width / (this.settings.scales.energy.max - this.settings.scales.energy.min),
             y: this.SVG_BBOX.height - (logspectrumCoordinates.counts - MIN_Y) * this.SVG_BBOX.height / (MAX_Y - MIN_Y),
         }
         return svgCoordinates;
@@ -470,9 +480,28 @@ class GuiChart implements Gui {
     }
 
     mouseWheel(e: WheelEvent) {
-        this.searchWidth += e.deltaY > 0 ? -10 : 10;
-        this.searchWidth = Math.max(1, Math.min(this.searchWidth, 500));
         e.preventDefault();
+        const target = this.SVGCoordinatesToDataCoordinates(this.mouseEventToSVGCoordinates(e)).x;
+        const energies = (this.settings.scales as SpectrumScales).energy;
+        
+        const range = energies.max - energies.min;
+        const center = (energies.min + energies.max)/2;
+
+        if (e.deltaY < 0) {
+            const newRange = range * 0.90;
+            const newTarget = (target + center*10)/11;
+            energies.min = newTarget - newRange/2;
+            energies.max = newTarget + newRange/2
+        } else if (e.deltaY > 0) {
+            const newRange = range * 1.1;
+            energies.min = center - newRange/2;
+            energies.max = center + newRange/2
+        }
+
+        this.PICASSO_CHART.update({
+            settings: this.settings,
+        });
+
     }
 }
 
