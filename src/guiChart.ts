@@ -362,8 +362,7 @@ class GuiChart implements Gui {
 
     countsInRange(): number {
         let countsInRange = 0;
-        const start = this.DATA_RANGE.start
-        const end = this.DATA_RANGE.end
+        const [start, end] = [Math.min, Math.max].map(f => f(this.DATA_RANGE.start, this.DATA_RANGE.end));
         for (let e = 0; e < ENERGIES.length; e++) {
             if (!(start < ENERGIES[e] && ENERGIES[e] < end))
                 continue;
