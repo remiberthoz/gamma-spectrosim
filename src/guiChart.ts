@@ -448,19 +448,18 @@ class GuiChart implements Gui {
         const target = this.SVGCoordinatesToDataCoordinates(this.mouseEventToSVGCoordinates(e)).x;
         const energies = (this.settings.scales as SpectrumScales).energy;
         
-        const range = energies.max - energies.min;
-        const center = (energies.min + energies.max)/2;
+        const leftRange = target - energies.min;
+        const rightRange = energies.max - target;
 
         if (e.deltaY < 0) {
-            const newRange = range * 0.90;
-            const newTarget = (target + center*10)/11;
-            energies.min = newTarget - newRange/2;
-            energies.max = newTarget + newRange/2
+            energies.min = target - leftRange * 0.90;
+            energies.max = target + rightRange * 0.90;
         } else if (e.deltaY > 0) {
-            const newRange = range * 1.1;
-            energies.min = center - newRange/2;
-            energies.max = center + newRange/2
+            energies.min = target - leftRange * 1.10;
+            energies.max = target + rightRange * 1.10;
         }
+        energies.min = Math.max(MIN_E, energies.min);
+        energies.max = Math.min(MAX_E, energies.max);
 
         this.PICASSO_CHART.update({
             settings: this.settings,
