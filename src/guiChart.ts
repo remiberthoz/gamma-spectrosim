@@ -209,23 +209,12 @@ class GuiChart implements Gui {
     private PICASSO_CHART: picasso.Chart;
     private SVG: SVGSVGElement;
     private SVG_BBOX: DOMRect;
-    private SVG_POINT: DOMPoint;
+    private SVG_POINT: DOMPoint;  // required as measurment tool on SVG
 
-    private SVG_RANGE_START: { x: number, y: number };
-    private SVG_RANGE_END: { x: number, y: number };
-    private SVG_RANGE: { x0: number, y0: number, x1: number, y1: number };
     private DATA_RANGE: { start: number, end: number, show: boolean };
     private SVG_RANGE_VIZ: SVGElement;
     private SVG_RANGE_VIZ_ID: string;
     private drawStartTime: number;
-
-    private searchWidth: number;
-    private SVG_CURSOR_VIZ: SVGElement;
-    private SVG_CURSOR_VIZ_ID: string;
-    private SVG_PEAK_VIZ: SVGElement;
-    private SVG_PEAK_VIZ_ID: string;
-    private SVG_PEAK_ENERGY_VIZ: SVGElement;
-    private SVG_PEAK_ENERGY_VIZ_ID: string;
 
     private lastRoundedTime: number = 0;
 
@@ -271,9 +260,6 @@ class GuiChart implements Gui {
         this.SVG = <SVGSVGElement> this.CHART.childNodes[COMPONENTS.findIndex(c => c.key == SPECTRUM_KEY)];
         this.SVG_BBOX = this.SVG.getBoundingClientRect();
         this.SVG_POINT = this.SVG.createSVGPoint();
-        this.SVG_RANGE_START = { x: 0, y: 0 };
-        this.SVG_RANGE_END = { x: 0, y: 0 };
-        this.SVG_RANGE = { x0: 0, y0: 0, x1: 0, y1: 0 };
         this.DATA_RANGE = { start: MIN_E, end: MAX_E, show: false };
 
         this.SVG_RANGE_VIZ_ID = "rangeIndicator";
@@ -283,27 +269,6 @@ class GuiChart implements Gui {
         this.SVG.appendChild(this.SVG_RANGE_VIZ);
 
         this.drawStartTime = -1;
-
-        this.SVG_CURSOR_VIZ_ID = "cursorIndicator";
-        this.SVG_CURSOR_VIZ = document.createElementNS("http://www.w3.org/2000/svg", 'circle');
-        this.SVG_CURSOR_VIZ.id = this.SVG_CURSOR_VIZ_ID;
-        this.SVG_CURSOR_VIZ.setAttributeNS(null, 'r', '2');
-        this.SVG_CURSOR_VIZ.setAttributeNS(null, 'style', 'fill: #1a1a1a; stroke: none;');
-        this.SVG.appendChild(this.SVG_CURSOR_VIZ);
-
-        this.searchWidth = 200;
-
-        this.SVG_PEAK_VIZ_ID = "peakIndicator";
-        this.SVG_PEAK_VIZ = document.createElementNS("http://www.w3.org/2000/svg", 'line');
-        this.SVG_PEAK_VIZ.id = this.SVG_PEAK_VIZ_ID;
-        this.SVG_PEAK_VIZ.setAttributeNS(null, 'style', 'fill: none; stroke: #a5470f;');
-        this.SVG.appendChild(this.SVG_PEAK_VIZ);
-
-        this.SVG_PEAK_ENERGY_VIZ_ID = "peakTextIndicator";
-        this.SVG_PEAK_ENERGY_VIZ = document.createElementNS("http://www.w3.org/2000/svg", 'text');
-        this.SVG_PEAK_ENERGY_VIZ.id = this.SVG_PEAK_ENERGY_VIZ_ID;
-        this.SVG_PEAK_ENERGY_VIZ.setAttributeNS(null, 'fill', '#a5470f');
-        this.SVG.appendChild(this.SVG_PEAK_ENERGY_VIZ);
 
         let resizeTimeout: ReturnType<typeof setTimeout> | undefined;
         window.addEventListener('resize', () => {
