@@ -197,8 +197,8 @@ function logScaleFormatter() {
 
 class GuiChart implements Gui {
 
-    private spectrumLog: SpectrumPoint[];
-    private backgroundLog: SpectrumPoint[];
+    private spectrumLog: SpectrumPoint[] = [];
+    private backgroundLog: SpectrumPoint[] = [];
     private totalCounts: number;
 
     private lastMouseMoveTime: number;
