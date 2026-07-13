@@ -136,7 +136,6 @@ class Simulation {
             else
                 callback(this._displayedTime + decayDelay, decayDelay, decayEnergy, decayEnergyIndex);
         }
-        this._displayedTime += duration;
         callback2();
     }
 
