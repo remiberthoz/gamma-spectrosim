@@ -14,6 +14,7 @@ interface Sensor { name: string, ray_width: number, efficiency: number };
  * Ray widht in keV (FWHM)
  */
 const SENSORS: Sensor[] = [
+    { name: "EDU, e=1%", ray_width: 4, efficiency: 1/100 },
     { name: "NaI(Tl), e=5%", ray_width: 30, efficiency: 5/100 },
     { name: "HPGe, e=0.8%", ray_width: 1, efficiency: 0.8/100 },
 ]
