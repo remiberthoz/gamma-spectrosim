@@ -73,14 +73,14 @@ window.onload = () => {
 
 
     ONE_HOUR_BUTTON.onclick = () => {
-        simulation.advanceTimeSample(3600, false, (timestamp: number, delay: number, energy: number, energyIndex: number) => {
+        simulation.advanceTimeSample(3600*4, false, (timestamp: number, delay: number, energy: number, energyIndex: number) => {
             chart.logDecay(timestamp, delay, energy, energyIndex);
             // table.resetData();
         }, () => {
             chart.updateDisplay(simulation.displayedTime)
             table.updateDisplay(simulation.displayedTime);
         });
-        simulation.advanceTimeBackground(3600, false, (timestamp: number, delay: number, energy: number, energyIndex: number) => {
+        simulation.advanceTimeBackground(3600*4, false, (timestamp: number, delay: number, energy: number, energyIndex: number) => {
             chart.logDecayBackground(timestamp, delay, energy, energyIndex);
             // table.resetData();
         }, () => {
