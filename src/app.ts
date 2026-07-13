@@ -73,7 +73,7 @@ window.onload = () => {
 
 
     ONE_HOUR_BUTTON.onclick = () => {
-        simulation.advanceTime(3600, false, (timestamp: number, delay: number, energy: number, energyIndex: number) => {
+        simulation.advanceTimeSample(3600, false, (timestamp: number, delay: number, energy: number, energyIndex: number) => {
             chart.logDecay(timestamp, delay, energy, energyIndex);
             // table.resetData();
         }, () => {
@@ -127,7 +127,7 @@ window.onload = () => {
         if (simulation.isPaused)
             return;
         const hash = simulation.hash;
-        simulation.advanceTime(1, true, (timestamp: number, delay: number, energy: number, energyIndex: number) => {
+        simulation.advanceTimeSample(1, true, (timestamp: number, delay: number, energy: number, energyIndex: number) => {
             if (simulation.isPaused || simulation.hash != hash)
                 return;
             chart.logDecay(timestamp, delay, energy, energyIndex);

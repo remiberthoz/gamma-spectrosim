@@ -110,7 +110,7 @@ class Simulation {
         }
     }
 
-    advanceTime(duration: number, withTimeouts: boolean, callback: (timestamp: number, delay: number, energy: number, energyIndex: number) => void, callback2: () => void) {
+    advanceTimeSample(duration: number, withTimeouts: boolean, callback: (timestamp: number, delay: number, energy: number, energyIndex: number) => void, callback2: () => void) {
         const sampleCps = this.sampleSpectrumAcc[ENERGIES.length - 1].counts;
         const numberOfDecays = drawFromPoisson(sampleCps * duration);
         for (let i = 0; i < numberOfDecays; i++) {
