@@ -447,9 +447,9 @@ class GuiChart implements Gui {
         e.preventDefault();
         const target = this.SVGCoordinatesToDataCoordinates(this.mouseEventToSVGCoordinates(e)).x;
         const energies = (this.settings.scales as SpectrumScales).energy;
-        
-        const leftRange = target - energies.min;
-        const rightRange = energies.max - target;
+
+        const leftRange = Math.max(ENERGIES[2], target - energies.min);
+        const rightRange = Math.max(ENERGIES[2], energies.max - target);
 
         if (e.deltaY < 0) {
             energies.min = target - leftRange * 0.90;
