@@ -108,6 +108,28 @@ const COMPONENTS: picasso.ComponentTypes[] = [
         }
     } as picasso.ComponentGridLine,
     {
+        type: 'line',
+        key: BACKGROUND_KEY,
+        data: {
+            extract: {
+                source: 'background',
+                field: ENERGY_SCALE,
+                props: { v: { field: COUNTS_SCALE }, },
+            }
+        },
+        settings: {
+            coordinates: {
+                major: { scale: ENERGY_SCALE },
+                minor: { scale: COUNTS_SCALE, ref: 'v' }
+            },
+            layers: {
+                curve: 'monotone',
+                line: { show: true, stroke: '#e08214', strokeWidth: 1.4 },
+                area: { show: false },
+            },
+        },
+    } as unknown as picasso.ComponentTypes,
+    {
         type: 'line' as const,
         key: SPECTRUM_KEY,
         data: {
@@ -125,28 +147,6 @@ const COMPONENTS: picasso.ComponentTypes[] = [
             layers: {
                 curve: 'monotone',
                 line: { show: true, stroke: '#1a5fb4', strokeWidth: 1.4 },
-                area: { show: false },
-            },
-        },
-    } as unknown as picasso.ComponentTypes,
-    {
-        type: 'line',
-        key: BACKGROUND_KEY,
-        data: {
-            extract: {
-                source: 'background',
-                field: ENERGY_SCALE,
-                props: { v: { field: COUNTS_SCALE }, },
-            }
-        },
-        settings: {
-            coordinates: {
-                major: { scale: ENERGY_SCALE },
-                minor: { scale: COUNTS_SCALE, ref: 'v' }
-            },
-            layers: {
-                curve: 'monotone',
-                line: { show: true, stroke: '#e08214', strokeWidth: 4 },
                 area: { show: false },
             },
         },
