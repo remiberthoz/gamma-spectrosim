@@ -14,12 +14,12 @@ The focus of the simulation is to provide spectra that look realistic enough for
 As a result, the simulator is not intended for nuclear physics education, but is sufficient to teach photopeak identification, time statistics and counting fluctuations, association of gamma ray energies with radioisotopes, and understanding activity levels through peak areas. With moderately complex samples, it is also possible to discuss the origin of radioisotopes: whether cosmogenic, primordial, or anthropogenic.
 
 **First impression with students:**
-- Measuring areas instead of peak height is not intuitive, even after a demonstration by the instructor. 
-- Reading peak energies on the graph is difficult, even with the cursor indicator.
-- There are too many peaks on the samples for students to perform the analysis alone. Even in groups, the teaching session should be organised by the instructor. I believe it would be good to perform a demonstration on one peak, and then assign each student two or three peaks to measure ; results are then pooled.
+- Measuring areas instead of peak height is not intuitive, even after a demonstration by the instructor. *Fixed with a better UX*
+- Reading peak energies on the graph is difficult, even with the cursor indicator. *Fixed with zoom by mouse wheel*
+- There are too many peaks on the samples for students to perform the analysis alone. Even in groups, the teaching session should be organised by the instructor. I believe it would be good to perform a demonstration on one peak, and then assign each student two or three peaks to measure ; results are then pooled. *Fixed with "EDU" sensor*
 - Comparison of peak energy with Laraweb not fruitfull, the Laraweb database is way too exhaustive.
 
-<img width="1675" height="803" alt="Screenshot 2025-12-09 at 18-51-56 ☢️ Gamma Spectroscopy Sim" src="https://github.com/user-attachments/assets/5a44c0f7-5baa-44c2-a0f4-8a5b272c9a35" />
+<img width="1675" height="803" alt="Screenshot 2026-07-13 ☢️ Gamma Spectroscopy Sim" src="https://github.com/user-attachments/assets/591a261e-2fe5-450b-b3a8-d1d6296e7e61" />
 
 ## Features and limitations
 
@@ -30,8 +30,10 @@ As a result, the simulator is not intended for nuclear physics education, but is
 - Basic detector selection:
     - NaI(Tl): wide peaks, high efficiency
     - HPGe: narrow peaks, low efficiency
+    - Educational detector with intermediate peak width, 1% efficiency
 - Spectra accumulate in real time
 - Simple and lightweight web interface
+- "Background" spectrum shown in addition to "sample" spectrum
 
 ---
 
@@ -40,7 +42,7 @@ As a result, the simulator is not intended for nuclear physics education, but is
 
 ## Usage
 
-Freely accessible at: TODO
+Freely accessible at: https://remiberthoz.fr/apps/gamma-spectrosim.html
 
 ## TODO
 
