@@ -70,47 +70,122 @@ THE SOFTWARE.
     <title>☢️ Gamma Spectroscopy Sim</title>
     <style>/**css**/</style>
 </head>
-<body id="body">
-    <div id="controls">
-        <span><label for="sample">Échantillon:</label> <select id="sample"></select></span>
-        <span><label for="detector">Détecteur:</label> <select id="detector"></select></span>
-        <span id="one-hour" class="button">Simuler une heure sans attendre.</span>
-        <span id="reset" class="button">Remettre le compteur à zéro.</span>
-        <span id="pause" class="button">Pause.</span>
+<body>
+    <div id="titlebar">
+        <span class="titlebar-icon">☢</span>
+        <span class="titlebar-text">Gamma Spectroscopy Sim</span>
+        <span class="titlebar-buttons"><span></span><span></span><span></span></span>
     </div>
-    <main>
-        <table id="log">
-            <tr><th>t / s</th><th>dt / s</th><th>E / keV</th></tr>
-            <tr><td>&nbsp;</td><td></td><td></td></tr>
-            <tr><td>&nbsp;</td><td></td><td></td></tr>
-            <tr><td>&nbsp;</td><td></td><td></td></tr>
-            <tr><td>&nbsp;</td><td></td><td></td></tr>
-            <tr><td>&nbsp;</td><td></td><td></td></tr>
-            <tr><td>&nbsp;</td><td></td><td></td></tr>
-            <tr><td>&nbsp;</td><td></td><td></td></tr>
-            <tr><td>&nbsp;</td><td></td><td></td></tr>
-            <tr><td>&nbsp;</td><td></td><td></td></tr>
-            <tr><td>&nbsp;</td><td></td><td></td></tr>
-            <tr><td>&nbsp;</td><td></td><td></td></tr>
-            <tr><td>&nbsp;</td><td></td><td></td></tr>
-            <tr><td>&nbsp;</td><td></td><td></td></tr>
-            <tr><td>&nbsp;</td><td></td><td></td></tr>
-            <tr><td>&nbsp;</td><td></td><td></td></tr>
-            <tr><td>&nbsp;</td><td></td><td></td></tr>
-            <tr><td>&nbsp;</td><td></td><td></td></tr>
-            <tr><td>&nbsp;</td><td></td><td></td></tr>
-            <tr><td>&nbsp;</td><td></td><td></td></tr>
-            <tr><td>&nbsp;</td><td></td><td></td></tr>
-        </table>
-        <div id="chart-area">
-            <div id="chart"></div>
-        </div>
-    </main>
-    <footer>
-        <p>Graphique généré avec <a href="https://qlik.dev/extend/create-viz-picasso/get-started/" target="_blank">Picasso.js</a> de QlikTech International AB (distribué sous la MIT License).</p>
-        <p>Données extraites de la base de donnée <a href="http://www.lnhb.fr/Laraweb/" target="_blank">Laraweb</a> de l'Institut de Radioprotection et de Sûreté Nucléaire.</p>
-        <p>Copyright (c) 2025 Rémi Berthoz - Code source disponible sur : <a href="https://github.com/remiberthoz/gamma-spectrosim" target="_blank">GitHub</a>.</p>
-    </footer>
+    <div id="hazard-stripe"></div>
+    <div id="readout">
+        <span id="readout-timer" class="readout-field">Timer: 0 s | Counts: 0000000000 | CPS: 0.000</span>
+        <span id="readout-pointer" class="readout-field">x=100 keV, y=1000</span>
+    </div>
+    <div id="workspace">
+        <fieldset id="controls">
+            <legend>Configuration de la mesure</legend>
+            <span><label for="sample">Échantillon:</label> <select id="sample"></select></span>
+            <span><label for="detector">Détecteur:</label> <select id="detector"></select></span>
+            <span id="one-hour" class="button">Simuler une heure sans attendre.</span>
+            <span id="reset" class="button">Remettre le compteur à zéro.</span>
+            <span id="pause" class="button">Pause.</span>
+        </fieldset>
+        <main>
+            <fieldset id="log-box">
+                <legend>Journal des détections</legend>
+                <table id="log">
+                    <tr><th>t / s</th><th>dt / s</th><th>E / keV</th></tr>
+                    <tr><td>&nbsp;</td><td></td><td></td></tr>
+                    <tr><td>&nbsp;</td><td></td><td></td></tr>
+                    <tr><td>&nbsp;</td><td></td><td></td></tr>
+                    <tr><td>&nbsp;</td><td></td><td></td></tr>
+                    <tr><td>&nbsp;</td><td></td><td></td></tr>
+                    <tr><td>&nbsp;</td><td></td><td></td></tr>
+                    <tr><td>&nbsp;</td><td></td><td></td></tr>
+                    <tr><td>&nbsp;</td><td></td><td></td></tr>
+                    <tr><td>&nbsp;</td><td></td><td></td></tr>
+                    <tr><td>&nbsp;</td><td></td><td></td></tr>
+                    <tr><td>&nbsp;</td><td></td><td></td></tr>
+                    <tr><td>&nbsp;</td><td></td><td></td></tr>
+                    <tr><td>&nbsp;</td><td></td><td></td></tr>
+                    <tr><td>&nbsp;</td><td></td><td></td></tr>
+                    <tr><td>&nbsp;</td><td></td><td></td></tr>
+                    <tr><td>&nbsp;</td><td></td><td></td></tr>
+                    <tr><td>&nbsp;</td><td></td><td></td></tr>
+                    <tr><td>&nbsp;</td><td></td><td></td></tr>
+                    <tr><td>&nbsp;</td><td></td><td></td></tr>
+                    <tr><td>&nbsp;</td><td></td><td></td></tr>
+                </table>
+            </fieldset>
+            <fieldset id="chart-area">
+                <legend>Spectre en énergie</legend>
+                <div id="chart-container"><div id="chart"></div></div>
+            </fieldset>
+            <fieldset id="status-panel">
+                <legend>État machine</legend>
+
+                <div id="status-leds">
+                    <div class="led-row"><span class="led led-green led-on"></span> Secteur</div>
+                    <div class="led-row"><span class="led led-green led-blink"></span> HT détecteur</div>
+                    <div class="led-row"><span class="led led-amber led-blink-slow"></span> Acquisition</div>
+                    <div class="led-row"><span class="led led-red"></span> Défaut</div>
+                </div>
+
+                <div id="status-readout">
+                    <div>MODULE&nbsp;: NaI(Tl) 3"×3"</div>
+                    <div>HT DÉT.&nbsp;: 850&nbsp;V</div>
+                    <div>GAIN AMPLI&nbsp;: ×8</div>
+                    <div>ADC&nbsp;: 2048&nbsp;ch</div>
+                    <div>TEMP. PRÉAMPLI&nbsp;: 34.2&nbsp;°C</div>
+                    <div>BUS&nbsp;: OK</div>
+                </div>
+
+                <div id="status-diagram">
+                    <svg viewBox="0 0 160 300" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <marker id="arrow" viewBox="0 0 8 8" refX="4" refY="4" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+                                <path d="M0,0 L8,4 L0,8 z" fill="#55524a" />
+                            </marker>
+                        </defs>
+                        <g font-family="Tahoma, Verdana, sans-serif" font-size="8" fill="#1a1a1a" text-anchor="middle">
+                            <rect x="10" y="6"   width="140" height="28" fill="#ffffff" stroke="#55524a"/>
+                            <text x="80" y="24">ÉCHANTILLON</text>
+
+                            <line x1="80" y1="34" x2="80" y2="52" stroke="#55524a" marker-end="url(#arrow)"/>
+
+                            <rect x="10" y="54"  width="140" height="28" fill="#fbe9cf" stroke="#a5470f"/>
+                            <text x="80" y="72">DÉTECTEUR</text>
+
+                            <line x1="80" y1="82" x2="80" y2="100" stroke="#55524a" marker-end="url(#arrow)"/>
+
+                            <rect x="10" y="102" width="140" height="28" fill="#ffffff" stroke="#55524a"/>
+                            <text x="80" y="120">PRÉAMPLI</text>
+
+                            <line x1="80" y1="130" x2="80" y2="148" stroke="#55524a" marker-end="url(#arrow)"/>
+
+                            <rect x="10" y="150" width="140" height="28" fill="#ffffff" stroke="#55524a"/>
+                            <text x="80" y="168">AMPLI</text>
+
+                            <line x1="80" y1="178" x2="80" y2="196" stroke="#55524a" marker-end="url(#arrow)"/>
+
+                            <rect x="10" y="198" width="140" height="28" fill="#ffffff" stroke="#55524a"/>
+                            <text x="80" y="216">ADC / MCA</text>
+
+                            <line x1="80" y1="226" x2="80" y2="244" stroke="#55524a" marker-end="url(#arrow)"/>
+
+                            <rect x="10" y="246" width="140" height="28" fill="#ffffff" stroke="#55524a"/>
+                            <text x="80" y="264">AFFICHAGE</text>
+                        </g>
+                    </svg>
+                </div>
+            </fieldset>
+        </main>
+        <footer>
+            <p>Graphique généré avec <a href="https://qlik.dev/extend/create-viz-picasso/get-started/" target="_blank">Picasso.js</a> de QlikTech International AB (distribué sous la MIT License).</p>
+            <p>Données extraites de la base de donnée <a href="http://www.lnhb.fr/Laraweb/" target="_blank">Laraweb</a> de l'Institut de Radioprotection et de Sûreté Nucléaire.</p>
+            <p>Copyright (c) 2025 Rémi Berthoz - Code source disponible sur : <a href="https://github.com/remiberthoz/gamma-spectrosim" target="_blank">GitHub</a>.</p>
+        </footer>
+    </div>
 </body>
 <script>/**js**/</script>
 </html>

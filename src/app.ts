@@ -14,6 +14,8 @@ window.onload = () => {
 
     const CHART = <HTMLTableElement> document.getElementById("chart");
     const LOG_TABLE = <HTMLTableElement> document.getElementById("log");
+    const TIMER_READOUT = document.getElementById("readout-timer");
+    const POINTER_READOUT = document.getElementById("readout-pointer");
 
     const ONE_HOUR_BUTTON = document.getElementById("one-hour");
     const RESET_BUTTON = document.getElementById("reset");
@@ -44,7 +46,7 @@ window.onload = () => {
 
     const simulation = new Simulation();
     const table = new GuiTable(LOG_TABLE);
-    const chart = new GuiChart(CHART);
+    const chart = new GuiChart(CHART, TIMER_READOUT, POINTER_READOUT);
 
     /** -----------------------------------------------------------------------
      *  Add listeners.

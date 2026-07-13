@@ -14,12 +14,10 @@ const X_AXIS_KEY = 'x-axis';
 const X_LABEL_KEY = 'x-label';
 const Y_AXIS_KEY = 'y-axis';
 const Y_LABEL_KEY = 'y-label';
-const TIMER_KEY = 'timer';
-const POINTER_KEY = 'pointer';
 const GRID_KEY = 'grid';
 const SPECTRUM_KEY = 'spectrum-line';
 
-const FONT = 'Segoe UI, Roboto, sans-serif';
+const FONT = 'Tahoma, Segoe UI, Verdana, sans-serif';
 
 
 const YTICKS = Array(10).fill(0).flatMap(
@@ -55,11 +53,11 @@ const SCALES = {
 
 const COMPONENTS: picasso.ComponentTypes[] = [
     {
-        type: 'axis' as const,
+        type: 'axis',
         key: X_AXIS_KEY,
         scale: ENERGY_SCALE,
         layout: { dock: 'bottom', },
-        settings: { labels: { fill: '#d6e1ff' }, line: {}, minorTicks: {}, ticks: {}},
+        settings: { labels: { fill: '#1a1a1a' }, line: {}, minorTicks: {}, ticks: {}},
     } as picasso.ComponentAxis,
     {
         type: 'text' as const,
@@ -71,7 +69,7 @@ const COMPONENTS: picasso.ComponentTypes[] = [
         x: { value: '50%' },  // Centered horizontally
         y: { value: '95%' },  // Position below the x-axis
         align: 'middle',
-        style: { text: { fill: '#d6e1ff' }},
+        style: { text: { fill: '#1a1a1a' }},
         settings: {},
     } as picasso.ComponentText,
     {
@@ -80,7 +78,7 @@ const COMPONENTS: picasso.ComponentTypes[] = [
         scale: COUNTS_SCALE,
         layout: { dock: 'left', },
         formatter: 'logScaleFormatter',
-        settings: { labels: { fill: '#d6e1ff' }, line: {}, minorTicks: {}, ticks: {}},
+        settings: { labels: { fill: '#1a1a1a' }, line: {}, minorTicks: {}, ticks: {}},
     } as picasso.ComponentAxis,
     {
         type: 'text' as const,
@@ -93,23 +91,7 @@ const COMPONENTS: picasso.ComponentTypes[] = [
         y: { value: '50%' },  // Centered vertically
         align: 'middle',
         rotate: 270,  // Rotate for vertical alignment
-        style: { text: { fill: '#d6e1ff' }},
-        settings: {},
-    } as picasso.ComponentText,
-    {
-        type: 'text' as const,
-        key: TIMER_KEY,
-        dock: 'top',
-        text: '',
-        style: { text: { fill: '#d6e1ff' }},
-        settings: {},
-    } as picasso.ComponentText,
-    {
-        type: 'text' as const,
-        key: POINTER_KEY,
-        dock: 'top',
-        text: 'x=100 keV, y=1000',
-        style: { text: { fill: '#d6e1ff' }},
+        style: { text: { fill: '#1a1a1a' }},
         settings: {},
     } as picasso.ComponentText,
     {
@@ -117,8 +99,8 @@ const COMPONENTS: picasso.ComponentTypes[] = [
         key: GRID_KEY,
         x: { scale: ENERGY_SCALE },
         y: { scale: COUNTS_SCALE },
-        ticks: { show: true, stroke: '#fff5' },
-        minorTicks: { show: true, stroke: '#fff2'  },
+        ticks: { show: true, stroke: '#ccc' },
+        minorTicks: { show: true, stroke: '#e6e6e6'  },
         settings: {
             x: { scale: ENERGY_SCALE },
             y: { scale: COUNTS_SCALE },
@@ -141,7 +123,7 @@ const COMPONENTS: picasso.ComponentTypes[] = [
             },
             layers: {
                 curve: 'monotone',
-                line: { show: true, stroke: '#ccc' },
+                line: { show: true, stroke: '#2f6b4c', strokeWidth: 1.4 },
                 area: { show: false },
             },
         },
@@ -197,6 +179,8 @@ class GuiChart implements Gui {
     private lastMouseMoveTime: number;
 
     private CHART: HTMLElement;
+    private TIMER_EL: HTMLElement;
+    private POINTER_EL: HTMLElement;
     private PICASSO_CHART: any;
     private SVG: SVGSVGElement;
     private SVG_BBOX: DOMRect;
@@ -220,16 +204,17 @@ class GuiChart implements Gui {
 
     private lastRoundedTime: number = 0;
 
-    constructor(chartElement: HTMLElement) {
+    constructor(chartElement: HTMLElement, timerElement: HTMLElement, pointerElement: HTMLElement) {
         this.CHART = chartElement;
+        this.TIMER_EL = timerElement;
+        this.POINTER_EL = pointerElement;
         this.spectrumLog = ENERGIES.map(e => { return { energy: e, counts: MIN_Y }});
         this.totalCounts = 0;
         this.lastMouseMoveTime = 0;
 
         picasso.formatter('logScaleFormatter', logScaleFormatter);
 
-        const timer = COMPONENTS.find(c => c.key == TIMER_KEY) as picasso.ComponentText;
-        timer.text = `Timer: 0 s | Counts: ${pad(0, 10)} | CPS: ${(0).toFixed(3)}`;
+        this.TIMER_EL.textContent = `Timer: 0 s | Counts: ${pad(0, 10)} | CPS: ${(0).toFixed(3)}`;
 
         this.PICASSO_CHART = picasso.chart({
             element: this.CHART,
@@ -264,7 +249,7 @@ class GuiChart implements Gui {
         this.SVG_RANGE_VIZ_ID = "rangeIndicator";
         this.SVG_RANGE_VIZ = document.createElementNS("http://www.w3.org/2000/svg", 'rect');
         this.SVG_RANGE_VIZ.id = this.SVG_RANGE_VIZ_ID;
-        this.SVG_RANGE_VIZ.setAttributeNS(null, 'style', 'fill: #9fcfff; opacity: 0.2; stroke: #9fcfff; stroke-width: 2px;');
+        this.SVG_RANGE_VIZ.setAttributeNS(null, 'style', 'fill: #a5470f; opacity: 0.12; stroke: #a5470f; stroke-width: 2px;');
         this.SVG.appendChild(this.SVG_RANGE_VIZ);
 
         this.drawStartTime = -1;
@@ -273,7 +258,7 @@ class GuiChart implements Gui {
         this.SVG_CURSOR_VIZ = document.createElementNS("http://www.w3.org/2000/svg", 'circle');
         this.SVG_CURSOR_VIZ.id = this.SVG_CURSOR_VIZ_ID;
         this.SVG_CURSOR_VIZ.setAttributeNS(null, 'r', '2');
-        this.SVG_CURSOR_VIZ.setAttributeNS(null, 'style', 'fill: white; stroke: none;');
+        this.SVG_CURSOR_VIZ.setAttributeNS(null, 'style', 'fill: #1a1a1a; stroke: none;');
         this.SVG.appendChild(this.SVG_CURSOR_VIZ);
 
         this.searchWidth = 200;
@@ -281,14 +266,26 @@ class GuiChart implements Gui {
         this.SVG_PEAK_VIZ_ID = "peakIndicator";
         this.SVG_PEAK_VIZ = document.createElementNS("http://www.w3.org/2000/svg", 'line');
         this.SVG_PEAK_VIZ.id = this.SVG_PEAK_VIZ_ID;
-        this.SVG_PEAK_VIZ.setAttributeNS(null, 'style', 'fill: none; stroke: white;');
+        this.SVG_PEAK_VIZ.setAttributeNS(null, 'style', 'fill: none; stroke: #a5470f;');
         this.SVG.appendChild(this.SVG_PEAK_VIZ);
 
         this.SVG_PEAK_ENERGY_VIZ_ID = "peakTextIndicator";
         this.SVG_PEAK_ENERGY_VIZ = document.createElementNS("http://www.w3.org/2000/svg", 'text');
         this.SVG_PEAK_ENERGY_VIZ.id = this.SVG_PEAK_ENERGY_VIZ_ID;
-        this.SVG_PEAK_ENERGY_VIZ.setAttributeNS(null, 'fill', '#9fcfff');
+        this.SVG_PEAK_ENERGY_VIZ.setAttributeNS(null, 'fill', '#a5470f');
         this.SVG.appendChild(this.SVG_PEAK_ENERGY_VIZ);
+
+        let resizeTimeout: ReturnType<typeof setTimeout> | undefined;
+        window.addEventListener('resize', () => {
+            if (resizeTimeout) clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                this.SVG = <SVGSVGElement> this.CHART.childNodes[COMPONENTS.findIndex(c => c.key == SPECTRUM_KEY)];
+                this.SVG_BBOX = this.SVG.getBoundingClientRect();
+                this.PICASSO_CHART.update({
+                    excludeFromUpdate: COMPONENTS.map(c => c.key),
+                });
+            }, 100);
+        });
     }
 
     resetData() {
@@ -306,25 +303,19 @@ class GuiChart implements Gui {
         this.totalCounts += 1;
     }
 
-    updateTexts() {
+    refreshTimerReadout() {
         const roundedTime = this.lastRoundedTime;
         const cps = roundedTime > 0 ? this.countsInRange()/roundedTime : 0;
-        const timer = COMPONENTS.find(c => c.key == TIMER_KEY)! as picasso.ComponentText;
-        timer.text = `Timer: ${timeConversion(roundedTime)} | Counts: ${pad(this.countsInRange(), 10)} | CPS: ${cps.toFixed(3)}`;
-        this.PICASSO_CHART.update({
-            excludeFromUpdate: COMPONENTS.map(c => c.key).filter(k => !(k == TIMER_KEY || k == POINTER_KEY)),
-        })
+        this.TIMER_EL.textContent = `Timer: ${timeConversion(roundedTime)} | Counts: ${pad(this.countsInRange(), 10)} | CPS: ${cps.toFixed(3)}`;
     }
 
     updateDisplay(roundedTime: number) {
         this.lastRoundedTime = roundedTime;
-        const cps = roundedTime > 0 ? this.countsInRange()/roundedTime : 0;
-        const timer = COMPONENTS.find(c => c.key == TIMER_KEY)! as picasso.ComponentText;
-        timer.text = `Timer: ${timeConversion(roundedTime)} | Counts: ${pad(this.countsInRange(), 10)} | CPS: ${cps.toFixed(3)}`;
+        this.refreshTimerReadout();
         this.PICASSO_CHART.update({
             data: { data: this.spectrumLog },
             partialData: true,
-            excludeFromUpdate: COMPONENTS.map(c => c.key).filter(k => !(k == SPECTRUM_KEY || k == TIMER_KEY)),
+            excludeFromUpdate: COMPONENTS.map(c => c.key).filter(k => k != SPECTRUM_KEY),
         })
     }
 
@@ -405,9 +396,7 @@ class GuiChart implements Gui {
         this.SVG_PEAK_ENERGY_VIZ.setAttributeNS(null, 'y', cursorSvgCoordinates.y.toString() + 10);
         this.SVG_PEAK_ENERGY_VIZ.textContent = maxDataCoordinates.energy.toFixed(0) + ' keV';
 
-        const pointer = COMPONENTS.find(c => c.key == POINTER_KEY)! as picasso.ComponentText;
-        pointer.text = `x=${cursorDataCoordinates.x.toFixed(2)}, y=${cursorDataCoordinates.y.toFixed(0)}`;
-        this.updateTexts();
+        this.POINTER_EL.textContent = `x=${cursorDataCoordinates.x.toFixed(2)}, y=${cursorDataCoordinates.y.toFixed(0)}`;
 
         if (this.drawStartTime < 0)
             return;
@@ -438,7 +427,7 @@ class GuiChart implements Gui {
         this.DATA_RANGE.c0 = Math.floor(Math.min(data0.y, data1.y));
         this.DATA_RANGE.e1 = Math.max(data0.x, data1.x);
         this.DATA_RANGE.c1 = Math.floor(Math.max(data0.y, data1.y));
-        this.updateTexts();
+        this.refreshTimerReadout();
     }
 
     mouseWheel(e: WheelEvent) {
