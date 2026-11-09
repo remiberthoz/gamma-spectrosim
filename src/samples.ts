@@ -16,18 +16,19 @@ interface SpectrumPoint { energy: number, counts: number };
 /**
  * Mass values in grams.
  */
+const thisYear = new Date().getFullYear();
 const SAMPLES: SampleGroup[] = [
     { name: "Sources de calibration", samples: [
-        { name: "Césium-137 @ 0.1 kBq (prod. 2025)", isotopes: [
+        { name: `Césium-137 @ 0.1 kBq (prod. ${thisYear})`, isotopes: [
             { name: "137Cs", mass: 3.10896937665e-11 },
         ] },
-        { name: "Cobalt-60 @ 0.1 kBq (prod. 2025)", isotopes: [
+        { name: `Cobalt-60 @ 0.1 kBq (prod. ${thisYear})`, isotopes: [
             { name: "60Co", mass: 239.097169090e-14 },
         ] },
-        { name: "Cobalt-60 @ 0.1 kBq (prod. 2020)", isotopes: [
+        { name: `Cobalt-60 @ 0.1 kBq (prod. ${thisYear-5})`, isotopes: [
             { name: "60Co", mass: 239.097169090e-14/2 },
         ] },
-        { name: "Cobalt-60 @ 0.1 kBq (prod. 2015)", isotopes: [
+        { name: `Cobalt-60 @ 0.1 kBq (prod. ${thisYear-10})`, isotopes: [
             { name: "60Co", mass: 239.097169090e-14/4 },
         ] },
     ] },
